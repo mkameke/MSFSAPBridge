@@ -59,7 +59,7 @@ The goal is to provide a simple bridge layer between a full-featured desktop sim
 1. **Get the sources**  
    You can either clone the repository or download the ZIP archive.
 
-   **Option A – Clone with Git**
+   **Clone with Git**
    ```bash
    git clone https://github.com/robustini/MSFSAPBridge.git
    ```
@@ -110,9 +110,9 @@ The bridge expects **JSON frame** SITL output.
 3. In **Model**, choose `plane` (or the vehicle type you want to simulate).
 4. In **Extra command line**, enter:
    ```text
-   --mode json
+   --model json
    ```
-5. Click the aircraft icon at the bottom to start SITL.
+5. Click the plane icon at the bottom to start SITL.
 
 Mission Planner will download and start ArduPilot SITL using the JSON backend and connect to the bridge.  
 Once everything is running, the bridge's *SITL Connection and Status* section should show all green LEDs with sensible rates.

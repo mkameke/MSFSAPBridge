@@ -7,6 +7,12 @@ The goal is to provide a simple bridge layer between a full-featured desktop sim
 
 ---
 
+## 🎬 Demo Video
+
+[![MSFS–ArduPilot Bridge Demo](https://img.youtube.com/vi/I-elnhB47Do/0.jpg)](https://youtu.be/I-elnhB47Do)
+
+---
+
 ## ✨ Features
 
 - **Bidirectional Bridge**   Connects MSFS (SimConnect) to ArduPilot SITL (JSON frame).

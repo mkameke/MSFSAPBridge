@@ -1,0 +1,30 @@
+# CMake build and temporary files
+/build/
+/out/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+*.dir
+
+# Visual Studio files and directories
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.user
+.vs/
+ipch/
+Debug/
+Release/
+
+# Object and executable files
+*.exe
+*.dll
+*.obj
+*.o
+*.pdb
+*.ilk
+*.lib
+
+# Local configuration file (should not be tracked)
+msfs_ap_bridge.ini

@@ -1,0 +1,235 @@
+# MSFS 202x – ArduPilot Bridge
+
+MSFS–ArduPilot Bridge is a lightweight Windows utility that connects **Microsoft Flight Simulator (MSFS)** with **ArduPilot-based setups** (SITL, companion tools, or integration utilities).  
+It uses **SimConnect** to read simulator state and exposes it via a **JSON-over-UDP** interface, specifically designed to feed the ArduPilot JSON backend.
+
+The goal is to provide a simple bridge layer between a full-featured desktop simulator and the [ArduPilot](https://ardupilot.org/) ecosystem, allowing you to fly ArduPilot SITL vehicles within the MSFS visual environment.
+
+---
+
+## ✨ Features
+
+- **Bidirectional Bridge**   Connects MSFS (SimConnect) to ArduPilot SITL (JSON frame).
+
+- **Multiple Positioning Modes**
+  - **MP SITL (Auto-Origin)** – Automatically sets the local origin to the aircraft's starting position (ideal for Mission Planner's internal SITL to avoid coordinate jumps).
+  - **Position** – Uses a fixed origin defined in the configuration (sends local vector only).
+  - **LLA** – Uses a fixed origin but sends full Latitude/Longitude/Altitude + local vector (ideal for WSL2/global SITL setups when supported).
+
+- **Joystick Integration**   Reads DirectInput devices and forwards axes/buttons to ArduPilot as RC overrides (no need for MAVLink joystick forwarding).
+
+- **Compact C++ Codebase**   Minimal dependencies, focused on performance and clarity.
+
+- **Persistent Configuration**   All interface settings are saved to a configuration file and loaded automatically upon startup.
+
+- **SITL Sensor Debug**   All sensors coming from MSFS via SimConnect can be monitored in a live view popup window.
+
+- **Sensor Logging**
+  If enabled, the software creates a CSV file containing all sensor data from SimConnect and other useful metrics for debugging or flight analysis.
+
+---
+
+## 🧩 Requirements
+
+- Microsoft Flight Simulator **2020 or 2024**
+- **SimConnect SDK** and `SimConnect.dll`
+- Windows 10 or later
+- **Visual Studio 2022** (Desktop development with C++ workload)
+- An **ArduPilot SITL** environment (Mission Planner internal SITL, WSL2, or standalone)
+
+> ### SimConnect note
+> To run the bridge, `SimConnect.dll` must be present in the same folder as `msfs_ap_bridge.exe`.  
+> This DLL is **not** included in the distribution for copyright reasons.  
+> To install the MSFS 2020/2024 SDK:
+> - Enable *Developer Mode* in MSFS.
+> - Use the new menu bar entry to download the SDK.
+> - Extract the downloaded ZIP and run the main installer.
+> - SimConnect and related headers/libraries will be installed on your system.
+
+---
+
+## 🛠 Build with Visual Studio 2022
+
+1. **Clone the repository**
+   ```bash
+   git clone [https://github.com/robustini/msfs_ap_bridge.git](https://github.com/robustini/msfs_ap_bridge.git)
+   cd msfs_ap_bridge
+   ```
+
+2. **Open in Visual Studio**
+   - Start **Visual Studio 2022**.
+   - `File → Open → Folder...`.
+   - Select the folder containing `CMakeLists.txt`.
+
+   Visual Studio will automatically configure the CMake project via CMake.
+
+3. **Build**
+   - Select configuration: `Release` / `x64`.
+   - Build the project (e.g. *Build → Build All*).
+
+   The executable `msfs_ap_bridge.exe` will be generated in the build output directory for the selected configuration.
+
+---
+
+## 🎮 Usage
+
+### 1. Start Microsoft Flight Simulator
+
+- Launch MSFS and spawn your aircraft at the desired location (airport, runway, etc.).  
+- Optionally choose a joystick as your primary control device.  
+- **Important:** remove or unbind control-surface and throttle assignments for that joystick inside MSFS.  
+  These controls will instead be driven by **ArduPilot via the bridge**, avoiding overlapping or conflicting inputs.
+
+### 2. Start the Bridge
+
+- Run `msfs_ap_bridge.exe`.
+- In the **SITL Connection and Status** section, leave the initial defaults:
+  - IP: `127.0.0.1` (localhost)
+  - Ports: TX = `9003`, RX = `9002`
+  - Position mode: `MP SITL` (recommended for Mission Planner’s internal SITL)
+- Select the joystick you want to use as ArduPilot's **RC input** from the joystick dropdown.
+
+The status LEDs will indicate connectivity for Sim, TX, RX, and joystick.
+
+### 3. Start ArduPilot SITL
+
+The bridge expects **JSON frame** SITL output.
+
+#### Mission Planner (recommended for first-time users)
+
+1. Open **Mission Planner**.
+2. Go to the **Simulation** tab.
+3. In **Model**, choose `plane` (or the vehicle type you want to simulate).
+4. In **Extra command line**, enter:
+   ```text
+   --mode json
+   ```
+5. Click the aircraft icon at the bottom to start SITL.
+
+Mission Planner will download and start ArduPilot SITL using the JSON backend and connect to the bridge.  
+Once everything is running, the bridge's *SITL Connection and Status* section should show all green LEDs with sensible rates.
+
+For this workflow, keep **Position mode = MP SITL (Auto-Origin)**.
+
+#### Advanced users – WSL2 / standalone SITL
+
+You can also run ArduPilot SITL from WSL2 or a native environment using `sim_vehicle.py` and JSON output.
+
+Example:
+```bash
+sim_vehicle.py -v ArduPlane -f json --sim-address 172.26.16.1 --console --map
+```
+
+Where `172.26.16.1` is the IP address of Windows as seen from WSL.  
+In the bridge configuration, you must obviously enter the WSL IP address instead.
+
+- In this setup, use **Position mode = Position** in the bridge.
+
+#### LLA mode and ArduPilot JSON backend
+
+By default, ArduPilot's JSON backend does **not** support receiving full geographic coordinates directly from the simulator.  
+This limitation can be removed by compiling ArduPilot with the following pull request applied:
+
+> https://github.com/ArduPilot/ardupilot/pull/31543
+
+When using a firmware built with that PR, you can select **`LLA`** as the position mode in the bridge, and MSFS will send full Lat/Lon/Alt to SITL.
+
+---
+
+## ⚙️ Configuration (`msfs_ap_bridge.ini`)
+
+The application reads settings from `msfs_ap_bridge.ini`, located next to the executable.
+
+Minimal example:
+
+```ini
+[bridge]
+# Target IP for ArduPilot SITL (usually localhost)
+ip = 127.0.0.1
+
+# Ports must match your SITL configuration
+port_tx = 9003  ; Bridge sends sensor data to SITL on this port
+port_rx = 9002  ; Bridge receives PWM/servo data from SITL on this port
+
+# Simulation rate (Hz)
+rate = 1000
+
+# Positioning Mode (crucial for stability)
+# 0 = MP SITL (Auto-origin for Mission Planner SITL)
+# 1 = Position (fixed origin, sends local vector)
+# 2 = LLA      (fixed origin, sends Lat/Lon/Alt + vector)
+pos_mode = 0
+```
+
+Other options (not shown here) allow control of resampling, timing, and other advanced behaviors.
+
+---
+
+## 🎛 Joystick & ArduPilot Configuration
+
+The most delicate part of the setup is making ArduPilot "accept" your joystick mapping through the bridge.
+
+### In the bridge UI
+
+- Map joystick axes and buttons to the desired RC channels.
+- Use the **reverse** options in the bridge UI (not in ArduPilot) to correct directions as needed.
+- Treat the bridge as your “virtual RC radio” for SITL.
+
+### In ArduPilot
+
+- Leave RC mapping and modes mostly at their defaults where possible.
+- Perform a standard **Radio Calibration** (especially if using an actual RC transmitter forwarded into the system).
+- Configure ArduPlane (or your chosen vehicle type) according to the official ArduPilot documentation.
+
+The following parameters are particularly important for stable operation with MSFS via the bridge:
+
+- `AHRS_EKF_TYPE = 10`
+- `GPS1_TYPE     = 100`
+- `INS_GYR_CAL   = 0`
+
+Refer to the ArduPilot wiki for full context and tuning details.
+
+---
+
+## 🖼 UI Preview
+
+<img
+  src="https://github.com/robustini/MSFSAPBridge/blob/master/assets/ui_preview.png"
+  alt="MSFS <--> Ardupilot SITL Bridge"
+  title="MSFS <--> Ardupilot SITL Bridge"
+  style="display: inline-block; margin: 0 auto; max-width: 200px">
+
+---
+
+## 🛡 License
+
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)**.
+
+You are free to use, study, modify, and redistribute this software under the terms of the GPLv3.  
+See the `LICENSE` file in the repository root for the full license text.
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome!
+
+1. Fork the repository  
+2. Create a feature branch  
+3. Commit your changes with clear messages  
+4. Open a pull request describing the motivation and behavior of your changes
+
+Bug reports and feature suggestions are also appreciated.
+
+---
+
+## ✈️ About
+
+**MSFS–ArduPilot Bridge** is developed by **Marco Robustini (aka Marcopter)**.  
+It is intended as a clean, focused utility that bridges the visual fidelity of MSFS with the advanced autopilot capabilities of ArduPilot SITL.
+
+Follow the author:
+
+- [LinkedIn](https://www.linkedin.com/in/robustini/)
+- [YouTube](https://www.youtube.com/erarius)
+- [Instagram](https://www.instagram.com/robustinimarco/)

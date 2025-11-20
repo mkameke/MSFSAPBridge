@@ -82,9 +82,9 @@ static void ShowSimConnectMissingDialog() {
     L"SimConnect.dll was not found.\n\n"
     L"This application requires Microsoft Flight Simulator (2020/2024).\n\n"
     L"How to fix:\n"
-    L"• Ensure MSFS is installed and up to date (SimConnect is included).\n"
-    L"• Or install the SDK from MSFS: Dev Mode → Help → SDK Installer.\n"
-    L"• Use the x64 build and ensure the Microsoft Visual C++ x64 runtime is installed.\n\n"
+    L"\u2022 Ensure MSFS is installed and up to date (SimConnect is included).\n"
+    L"\u2022 Or install the SDK from MSFS: Dev Mode → Help → SDK Installer.\n"
+    L"\u2022 Use the x64 build and ensure the Microsoft Visual C++ x64 runtime is installed.\n\n"
     L"Press OK to close.",
     L"Error: SimConnect missing",
     MB_OK | MB_ICONERROR | MB_SETFOREGROUND | MB_TOPMOST | MB_SYSTEMMODAL
